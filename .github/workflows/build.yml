@@ -1,4 +1,4 @@
-name: Build APK
+name: APK Derle
 
 on:
   push:
@@ -7,25 +7,27 @@ on:
 
 jobs:
   build:
+    name: APK Derle (Debug)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Depoyu indir
+        uses: actions/checkout@v4
 
-      - name: Set up JDK 17
+      - name: JDK 17 Kur
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
 
-      - name: Set up Gradle
+      - name: Gradle Kur
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: 8.9
 
-      - name: Build debug APK
+      - name: APK'yı Derle
         run: gradle assembleDebug --no-daemon
 
-      - name: Upload APK
+      - name: APK'yı Yükle
         uses: actions/upload-artifact@v4
         with:
           name: arka-ekran-saat-debug

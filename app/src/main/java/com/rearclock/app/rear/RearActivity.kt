@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.View
 import android.view.WindowManager
 import com.rearclock.app.core.DisplayFinder
+import com.rearclock.app.core.RearCommands
 import com.rearclock.app.core.RearSettings
 
 /**

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Arka Ekran Saat</string>
+    <string name="grant_shizuku">Shizuku izni ver</string>
+    <string name="pick_image">Duvar kağıdı seç</string>
+    <string name="show_rear">Arka ekranda göster</string>
+    <string name="hide_rear">Kapat (Xiaomi arka ekranına dön)</string>
+    <string name="keep_awake">Ekranı açık tut</string>
+    <string name="clock_on_wallpaper">Saat duvar kağıdının üstünde</string>
+    <string name="status_choose_image">Önce bir duvar kağıdı seç</string>
+    <string name="status_shizuku_needed">Shizuku gerekli. Uygulamayı kur ve başlat (kablosuz hata ayıklama veya ADB).</string>
+    <string name="rear_display_info">Arka ekran bilgisi burada görünecek.</string>
+</resources>

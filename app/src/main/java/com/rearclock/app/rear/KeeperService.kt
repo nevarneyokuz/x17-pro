@@ -75,7 +75,7 @@ class KeeperService : Service() {
             )
         }
         return Notification.Builder(this, CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_lock_idle_clock)
+            .setSmallIcon(R.drawable.ic_stat_clock)
             .setContentTitle(getString(R.string.app_name))
             .setContentText("Arka ekran saati açık")
             .setOngoing(true)

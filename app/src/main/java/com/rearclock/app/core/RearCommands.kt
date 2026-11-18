@@ -35,6 +35,19 @@ object RearCommands {
             false
         }
 
+    /**
+     * HyperOS blocks opening third-party apps directly on the rear display ("error 102"), but it
+     * does allow moving an already-running task there. So the activity starts on the default
+     * display first (this command), then the stack is moved over (moveTaskToDisplay).
+     */
+    fun launchHostLocal(packageName: String, token: String): String = run(
+        AM, "start", "-n", "$packageName/.rear.RearActivity",
+        "--es", "token", token,
+    )
+
+    fun moveTaskToDisplay(taskId: Int, displayId: Int) =
+        run(AM, "display", "move-stack", taskId.toString(), displayId.toString())
+
     fun launchHost(packageName: String, displayId: Int, token: String): String = run(
         AM, "start", "--display", displayId.toString(), "-n", "$packageName/.rear.RearActivity",
         "--es", "token", token,
@@ -73,11 +86,34 @@ object RearCommands {
         }
     }
 
-    /** True when [displayId]'s top task belongs to [xiaomiLauncherLineFragment] (its launcher task). */
+    /** True when [displayId]'s top task belongs to Xiaomi's back screen launcher, not to us. */
     fun xiaomiLauncherOnTop(tasks: String, displayId: Int): Boolean {
+        val block = displayBlock(tasks, displayId) ?: return false
+        val hasXiaomi = block.any { it.contains(XIAOMI_REAR_PACKAGE) }
+        if (!hasXiaomi) return false
+        val oursAtEnd = block.drop(1).any { it.contains("com.rearclock.app") }
+        return !oursAtEnd
+    }
+
+    /** The taskId of our rear activity wherever it currently lives, or null. */
+    fun findOurTaskId(tasks: String): Int? {
+        val lines = tasks.lines()
+        var taskId: Int? = null
+        for (line in lines) {
+            val taskMatch = Regex("Task id #(\\d+)").find(line)
+            if (taskMatch != null) {
+                taskId = taskMatch.groupValues[1].toIntOrNull()
+            } else if (line.contains("com.rearclock.app") && taskId != null) {
+                return taskId
+            }
+        }
+        return null
+    }
+
+    private fun displayBlock(tasks: String, displayId: Int): List<String>? {
         val lines = tasks.lines()
         val start = lines.indexOfFirst { it.contains("Display #$displayId", ignoreCase = true) }
-        if (start < 0) return false
+        if (start < 0) return null
         var end = lines.size
         for (i in start + 1 until lines.size) {
             if (lines[i].contains("Display #")) {
@@ -85,10 +121,7 @@ object RearCommands {
                 break
             }
         }
-        val block = lines.subList(start, end)
-        val top = block.lastOrNull { it.contains("topActivity", ignoreCase = true) || it.contains("com.xiaomi.subscreencenter") }
-            ?: return false
-        return top.contains(XIAOMI_REAR_PACKAGE)
+        return lines.subList(start, end)
     }
 
     private fun run(vararg command: String): String {

@@ -42,10 +42,29 @@ class KeeperService : Service() {
                 }
                 val tasks = RearCommands.taskList()
                 if (tasks != null && RearCommands.xiaomiLauncherOnTop(tasks, displayId)) {
-                    RearCommands.launchHost(packageName, displayId, RearSettings.token(appContext))
+                    recoverRearClock(displayId)
                 }
                 handler.postDelayed(this, WATCH_INTERVAL_MS)
             }
+        }
+    }
+
+    /**
+     * Xiaomi's back screen took over. Our activity may still be alive on the default display,
+     * in which case moving it back works; otherwise relaunch it locally first, then move.
+     */
+    private fun recoverRearClock(displayId: Int) {
+        val tasks = RearCommands.taskList() ?: return
+        val taskId = RearCommands.findOurTaskId(tasks)
+        if (taskId != null) {
+            if (RearCommands.moveTaskToDisplay(taskId, displayId) == "ok") return
+        }
+        val launched = RearCommands.launchHostLocal(packageName, RearSettings.token(appContext))
+        if (launched == "ok") {
+            Thread.sleep(600)
+            val refreshed = RearCommands.taskList() ?: return
+            val newTaskId = RearCommands.findOurTaskId(refreshed) ?: return
+            RearCommands.moveTaskToDisplay(newTaskId, displayId)
         }
     }
 

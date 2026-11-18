@@ -132,18 +132,51 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
             status.text = "Arka ekran bulunamadı."
             return
         }
-        if (RearSettings.keepAwake(this)) {
-            RearCommands.keepDisplayOn(displayId)
+
+        val result = when(RearCommands.launchHostLocal(packageName, RearSettings.token(this))) {
+            "ok" -> true.also {
+                RearSettings.setActive(this, true)
+                status.text = "Arka ekrana taşınıyor..."
+            }
+            else -> false
         }
-        val result = RearCommands.launchHost(packageName, displayId, RearSettings.token(this))
-        if (result == "ok") {
-            RearSettings.setActive(this, true)
-            RearCommands.stopXiaomiRearLauncher()
-            KeeperService.start(this)
+        if (result) {
+            moveClockToRear(attempt = 1, displayId = displayId)
         } else {
-            status.text = "Başlatılamadı: $result"
+            status.text = "Başlatılamadı: uygulama açılamadı."
         }
         updateUi()
+    }
+
+    /**
+     * HyperOS refuses to open apps directly on the rear display, but allows moving a running
+     * task there. We give the activity a moment to appear, then move its stack.
+     */
+    private fun moveClockToRear(attempt: Int, displayId: Int) {
+        if (!RearSettings.active(this)) return
+        if (attempt > 8) {
+            status.text = "Taşıma başarısız: görev bulunamadı ('am stack list' boş)."
+            return
+        }
+        android.os.Handler(mainLooper).postDelayed({
+            if (!RearSettings.active(this)) return@postDelayed
+            val tasks = RearCommands.taskList()
+            val taskId = tasks?.let { RearCommands.findOurTaskId(it) }
+            if (taskId == null) {
+                moveClockToRear(attempt + 1, displayId)
+                return@postDelayed
+            }
+            val moved = RearCommands.moveTaskToDisplay(taskId, displayId)
+            if (moved == "ok") {
+                status.text = "Arka ekranda gösteriliyor ✓"
+                RearCommands.stopXiaomiRearLauncher()
+                KeeperService.start(this)
+                updateUi()
+            } else {
+                status.text = "Taşıma başarısız: $moved (tekrar deneniyor)"
+                moveClockToRear(attempt + 1, displayId)
+            }
+        }, 600L)
     }
 
     private fun stopRear() {
